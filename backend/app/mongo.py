@@ -19,7 +19,7 @@ class MongoArchive:
         if not settings.mongodb_url:
             return
         try:
-            self.client = AsyncIOMotorClient(settings.mongodb_url, serverSelectionTimeoutMS=2_000)
+            self.client = AsyncIOMotorClient(settings.mongodb_url, serverSelectionTimeoutMS=10_000)
             await self.client.admin.command("ping")
             self.collection = self.client[settings.mongodb_database]["raw_offer_snapshots"]
         except Exception:  # noqa: BLE001
