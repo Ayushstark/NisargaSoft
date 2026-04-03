@@ -222,33 +222,50 @@ export default function App() {
   const currentError = currentQuery.error instanceof ApiError ? currentQuery.error.message : null;
 
   const CHART_COLORS = ["#6366f1", "#f59e0b", "#10b981", "#ef4444", "#3b82f6", "#8b5cf6"];
+  const [highlightedSeller, setHighlightedSeller] = useState<string | null>(null);
 
-  // Only show the chart when there are at least 2 distinct timestamps — a single
-  // data point produces a flat line that gives no useful information.
-  const chartData = useMemo(() => {
+  // Build combined chart with all sellers
+  const combinedChartData = useMemo(() => {
     const series = historyQuery.data?.series ?? [];
     if (!series.length) return null;
-    const allTimestamps = Array.from(
-      new Set(series.flatMap((s) => s.points.map((p) => p.captured_at as string)))
-    ).sort();
-    if (allTimestamps.length < 2) return null;
+
+    // Collect all unique timestamps
+    const allTimestamps = new Set<string>();
+    series.forEach((s) => {
+      s.points.forEach((p) => allTimestamps.add(p.captured_at as string));
+    });
+    const sortedTimestamps = Array.from(allTimestamps).sort();
+
+    // Build datasets for each seller
+    const datasets = series.map((s, i) => {
+      const pointsMap = new Map(s.points.map((p) => [p.captured_at as string, p.price]));
+      const color = CHART_COLORS[i % CHART_COLORS.length];
+      const isHighlighted = highlightedSeller === null || highlightedSeller === s.seller_name;
+      
+      return {
+        label: s.seller_name,
+        data: sortedTimestamps.map((ts) => pointsMap.get(ts) ?? null),
+        borderColor: color,
+        backgroundColor: color + "22",
+        borderWidth: isHighlighted ? 3 : 1,
+        pointRadius: isHighlighted ? 4 : 2,
+        pointHoverRadius: 6,
+        tension: 0.3,
+        fill: false,
+        opacity: isHighlighted ? 1 : 0.3,
+        borderDash: isHighlighted ? [] : [5, 5],
+      };
+    });
+
     return {
-      labels: allTimestamps.map((ts) =>
+      labels: sortedTimestamps.map((ts) =>
         new Intl.DateTimeFormat("en-IN", { dateStyle: "short", timeStyle: "short" }).format(new Date(ts))
       ),
-      datasets: series.map((s, i) => ({
-        label: s.seller_name,
-        data: allTimestamps.map((ts) => {
-          const pt = s.points.find((p) => (p.captured_at as string) === ts);
-          return pt ? pt.price : null;
-        }),
-        borderColor: CHART_COLORS[i % CHART_COLORS.length],
-        backgroundColor: CHART_COLORS[i % CHART_COLORS.length] + "33",
-        tension: 0.3,
-        spanGaps: true,
-      })),
+      datasets,
+      sellerNames: series.map((s) => s.seller_name),
+      colors: series.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]),
     };
-  }, [historyQuery.data]);
+  }, [historyQuery.data, highlightedSeller]);
 
   const recentAlerts: AlertEvent[] = useMemo(() => {
     const all = alertsQuery.data ?? [];
@@ -309,12 +326,17 @@ export default function App() {
               id="buyer-location"
               value={selectedLocation}
               onChange={(event) => setSelectedLocation(event.target.value)}
+              disabled={locationsQuery.isLoading}
             >
-              {(locationsQuery.data ?? []).map((item) => (
-                <option key={item.code} value={item.code}>
-                  {item.city}, {item.state} ({item.pin_code})
-                </option>
-              ))}
+              {locationsQuery.isLoading ? (
+                <option value="">Loading locations...</option>
+              ) : (
+                (locationsQuery.data ?? []).map((item) => (
+                  <option key={item.code} value={item.code}>
+                    {item.city}, {item.state} ({item.pin_code})
+                  </option>
+                ))
+              )}
             </select>
           </div>
         </div>
@@ -546,24 +568,64 @@ export default function App() {
             </div>
           </article>
 
-          {chartData ? (
+          {combinedChartData ? (
             <article className="offers-card">
               <div className="section-head">
                 <h3>Price history</h3>
-                <span>last 7 days</span>
+                <span>{combinedChartData.datasets.length} seller{combinedChartData.datasets.length !== 1 ? "s" : ""}</span>
               </div>
-              <div style={{ padding: "1rem 0" }}>
+              
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "16px" }}>
+                <button
+                  type="button"
+                  className={`mini-button ${highlightedSeller === null ? "" : "ghost"}`}
+                  onClick={() => setHighlightedSeller(null)}
+                  style={{ fontSize: "0.85rem" }}
+                >
+                  All Sellers
+                </button>
+                {combinedChartData.sellerNames.map((name, i) => (
+                  <button
+                    key={name}
+                    type="button"
+                    className={`mini-button ${highlightedSeller === name ? "" : "ghost"}`}
+                    onClick={() => setHighlightedSeller(name)}
+                    style={{
+                      fontSize: "0.85rem",
+                      borderColor: highlightedSeller === name ? combinedChartData.colors[i] : undefined,
+                      background: highlightedSeller === name ? combinedChartData.colors[i] + "22" : undefined,
+                    }}
+                  >
+                    <span style={{ 
+                      display: "inline-block", 
+                      width: "8px", 
+                      height: "8px", 
+                      borderRadius: "50%", 
+                      backgroundColor: combinedChartData.colors[i],
+                      marginRight: "6px"
+                    }} />
+                    {name}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ padding: "0.75rem 0 0" }}>
                 <Line
-                  data={chartData}
+                  data={combinedChartData}
                   options={{
                     responsive: true,
-                    interaction: { mode: "index", intersect: false },
+                    interaction: {
+                      mode: "index",
+                      intersect: false,
+                    },
                     plugins: {
-                      legend: { position: "bottom" },
+                      legend: { display: false },
                       tooltip: {
                         callbacks: {
                           label: (ctx) =>
-                            `${ctx.dataset.label}: ${ctx.parsed.y != null ? new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(ctx.parsed.y) : "—"}`,
+                            ctx.parsed.y != null
+                              ? `${ctx.dataset.label}: ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(ctx.parsed.y)}`
+                              : "—",
                         },
                       },
                     },
@@ -571,7 +633,11 @@ export default function App() {
                       y: {
                         ticks: {
                           callback: (v) =>
-                            new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(v)),
+                            new Intl.NumberFormat("en-IN", {
+                              style: "currency",
+                              currency: "INR",
+                              maximumFractionDigits: 0,
+                            }).format(Number(v)),
                         },
                       },
                       x: { ticks: { maxTicksLimit: 8 } },
@@ -584,12 +650,11 @@ export default function App() {
             <article className="offers-card">
               <div className="section-head">
                 <h3>Price history</h3>
-                <span>building up</span>
+                <span>no data yet</span>
               </div>
               <div className="empty-mini" style={{ padding: "1.5rem 1rem" }}>
                 <p style={{ margin: 0 }}>
-                  Only one snapshot captured so far — history builds automatically as the scheduler
-                  runs every {20} minutes. Add this ASIN to the watchlist to keep it monitored.
+                  No history yet. Add this ASIN to the watchlist — the scheduler will collect price data every 10 minutes.
                 </p>
               </div>
             </article>
