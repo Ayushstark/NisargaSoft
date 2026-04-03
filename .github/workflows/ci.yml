@@ -2,7 +2,14 @@ name: CI
 
 on:
   push:
+    branches:
+      - main
+      - mohit
+      - "feature/**"
+      - "fix/**"
   pull_request:
+    branches:
+      - main
 
 jobs:
   # ── Python: lint + syntax checks ─────────────────────────────────────────
