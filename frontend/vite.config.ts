@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  base: process.env.GITHUB_ACTIONS ? "/NisargaSoft/" : "/",
+  base: "/NisargaSoft/",
   server: {
     port: 3000,
     host: "0.0.0.0",
