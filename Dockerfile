@@ -34,7 +34,8 @@ RUN python -m pip install --no-cache-dir \
     "uvicorn[standard]>=0.30.1" \
     "python-slugify>=8.0.4"
 
-FROM api-base AS backend
+FROM crawler-base AS backend
+RUN playwright install --with-deps chromium
 CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 FROM api-base AS crawler-base
