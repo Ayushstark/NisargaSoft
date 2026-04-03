@@ -25,6 +25,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 async def init_db() -> None:
     import backend.app.models  # noqa: F401
     import structlog
+
     logger = structlog.get_logger(__name__)
 
     async with engine.begin() as connection:
@@ -32,14 +33,18 @@ async def init_db() -> None:
         if "postgresql" in settings.database_url:
             try:
                 await connection.execute(text("CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE"))
-                await connection.execute(text("""
+                await connection.execute(
+                    text(
+                        """
                     SELECT create_hypertable(
                         'offers',
                         'captured_at',
                         if_not_exists => TRUE,
                         migrate_data => TRUE
                     )
-                """))
+                """
+                    )
+                )
                 logger.info("timescaledb_hypertable_ready")
             except Exception:  # noqa: BLE001
                 # Plain PostgreSQL without TimescaleDB — works fine, just no

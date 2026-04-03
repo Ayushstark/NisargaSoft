@@ -254,8 +254,7 @@ async def get_current_snapshot(session: AsyncSession, asin: str, location_code: 
     # ASIN+location. All offers from that scrape run share the same timestamp
     # because the spider sets captured_at once per ingest call.
     latest_ts_row = await session.execute(
-        select(func.max(Offer.captured_at))
-        .where(Offer.asin == asin, Offer.buyer_location_code == location_code)
+        select(func.max(Offer.captured_at)).where(Offer.asin == asin, Offer.buyer_location_code == location_code)
     )
     latest_ts = latest_ts_row.scalar_one_or_none()
 

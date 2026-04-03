@@ -66,6 +66,7 @@ async def metrics():
 async def locations() -> list[LocationProfileOut]:
     # Return all known location profiles, not just the configured defaults.
     from backend.app.location_profiles import LOCATION_PROFILES
+
     return [
         LocationProfileOut(
             code=profile.code,

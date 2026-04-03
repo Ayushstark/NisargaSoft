@@ -498,9 +498,7 @@ class AmazonBearingsSpider(scrapy.Spider):
 
         while scroll_attempts < max_scrolls:
             # Count current offers in DOM
-            current_offer_count = await page.locator(
-                "#aod-pinned-offer, #aod-offer, div.aod-offer"
-            ).count()
+            current_offer_count = await page.locator("#aod-pinned-offer, #aod-offer, div.aod-offer").count()
 
             # If no new offers appeared, we're done
             if current_offer_count == previous_offer_count and scroll_attempts > 0:
@@ -513,11 +511,7 @@ class AmazonBearingsSpider(scrapy.Spider):
             await page.wait_for_timeout(1_500)
 
             # Check for "Show more" button and click if present
-            show_more = page.locator(
-                "a[data-action='show-more'], "
-                ".a-pagination .a-last a, "
-                "#aod-show-more-offers"
-            )
+            show_more = page.locator("a[data-action='show-more'], " ".a-pagination .a-last a, " "#aod-show-more-offers")
             if await show_more.count() > 0:
                 try:
                     await show_more.first.click(timeout=2_000)

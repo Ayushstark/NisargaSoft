@@ -15,6 +15,7 @@ logger = structlog.get_logger(__name__)
 @celery_app.task(name="bearing_monitor.run_watchlist")
 def run_watchlist() -> dict[str, int | str]:
     import os
+
     started_at = time.perf_counter()
 
     # Pass INGEST_API_URL explicitly so the subprocess can reach the API

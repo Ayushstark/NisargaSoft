@@ -67,8 +67,21 @@ def validate_product(title: str | None, brand: str | None = None, query: str | N
         return ProductValidation(is_valid=True, is_bearing=True)
 
     bearing_series_tokens = (
-        "620", "621", "622", "623", "624", "625", "626", "627", "628", "629",
-        "630", "631", "632", "633", "634",
+        "620",
+        "621",
+        "622",
+        "623",
+        "624",
+        "625",
+        "626",
+        "627",
+        "628",
+        "629",
+        "630",
+        "631",
+        "632",
+        "633",
+        "634",
     )
     if "bearing" in normalized_query and any(token in normalized_title for token in bearing_series_tokens):
         return ProductValidation(is_valid=True, is_bearing=True)
