@@ -1,0 +1,37 @@
+name: Auto Format
+
+on:
+  push:
+    branches:
+      - main
+      - mohit
+      - "feature/**"
+      - "fix/**"
+
+jobs:
+  black:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install black
+        run: pip install black
+
+      - name: Run black
+        run: python -m black backend scraper
+
+      - name: Commit formatted files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: auto-format with black [skip ci]"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"

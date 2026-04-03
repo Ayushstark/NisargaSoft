@@ -10,10 +10,6 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 import httpx
 
-from backend.app.services.product_filters import validate_product
-from scraper.amazon_monitor.spiders.amazon_bearings import AmazonBearingsSpider
-
-
 ASIN_RE = re.compile(r"\b([A-Z0-9]{10})\b", re.IGNORECASE)
 PRODUCT_PATH_RE = re.compile(r"/(?:dp|gp/product|gp/aw/d|gp/offer-listing)/([A-Z0-9]{10})", re.IGNORECASE)
 PROJECT_ROOT = Path(__file__).resolve().parents[3]

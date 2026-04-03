@@ -12,7 +12,6 @@ from sse_starlette import EventSourceResponse
 from backend.app.config import settings
 from backend.app.db import get_db
 from backend.app.events import event_broker
-from backend.app.location_profiles import resolve_locations
 from backend.app.metrics import metrics_response
 from backend.app.models import AlertEvent, Product
 from backend.app.schemas import (
@@ -35,7 +34,6 @@ from backend.app.services.live_acquisition import (
     LiveAcquisitionError,
     discover_search_products,
     resolve_amazon_asin,
-    run_asin_scrape,
     run_asin_scrape_all_locations,
 )
 from backend.app.services.market_data import (
